@@ -1,0 +1,142 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <script src="login.js" defer></script>
+</head>
+<body>
+    <h2>Login</h2>
+    <form id="loginForm">
+        <label for="username">Usuario:</label>
+        <input type="text" id="username" name="username" required>
+        <br>
+        <label for="password">Contraseña:</label>
+        <input type="password" id="password" name="password" required>
+        <br>
+        <button type="submit">Login</button>
+    </form>
+    <div id="hhhh">
+        <div id="message"></div>
+        <button id="printInfoBtn">Imprimir Info de la Base de Datos</button>
+        <div id="databaseInfo">
+            <table id="databaseTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>cdr_cal</th>
+                        <th>cup_diameter</th>
+                        <th>disk_diameter</th>
+                        <th>Eliminar</th>
+                        <th>Editar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Aquí se mostrarán las filas de la tabla -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <div id="imageContainer"></div>
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <img id="modalImage" src="" alt="Imagen">
+        </div>
+      </div>
+      <script>
+        
+    // Agregar el evento de clic al botón "Imprimir Info de la Base de Datos"
+    document.getElementById('printInfoBtn').addEventListener('click', async function() {
+        try {
+            const response = await fetch('http://127.0.0.1:5000/get_info', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            // Actualizar la tabla con los datos obtenidos
+            const databaseTableBody = document.getElementById('databaseTable').getElementsByTagName('tbody')[0];
+            databaseTableBody.innerHTML = ''; // Limpiar contenido existente
+
+            result.forEach(rowData => {
+                const row = document.createElement('tr');
+                rowData.forEach((cellData, index) => {
+                    const cell = document.createElement('td');
+                    cell.textContent = cellData;
+                    row.appendChild(cell);
+                });
+
+                // Crear y agregar un botón para eliminar el registro de la fila
+                const deleteButtonCell = document.createElement('td');
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Eliminar';
+                deleteButton.addEventListener('click', async () => {
+                    try {
+                        // Confirmar si el usuario está seguro de eliminar el registro
+                        const confirmDelete = confirm("¿Estás seguro de que deseas eliminar este registro?");
+                        if (confirmDelete) {
+                            const id = rowData[0]; // Suponiendo que el ID está en la primera columna
+                            const response = await fetch('http://127.0.0.1:5000/delete_record', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ id: id })
+                            });
+
+                            const deleteResult = await response.json();
+                            if (deleteResult.success) {
+                                alert("Registro eliminado exitosamente.");
+                                // Refrescar la tabla después de eliminar el registro
+                                document.getElementById('printInfoBtn').click(); // Simular clic en el botón "Imprimir Info de la Base de Datos"
+                            } else {
+                                alert("Error al eliminar el registro.");
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error al eliminar el registro:", error);
+                    }
+                });
+                deleteButtonCell.appendChild(deleteButton);
+                row.appendChild(deleteButtonCell);
+
+                // Crear y agregar un botón para editar el registro de la fila
+                const editButtonCell = document.createElement('td');
+                const editButton = document.createElement('button');
+                editButton.textContent = 'Editar';
+                editButton.addEventListener('click', async () => {
+                    try {
+                        const id = rowData[0]; // Suponiendo que el ID está en la primera columna
+                        const response = await fetch(`http://127.0.0.1:5000/obtener_imagen_base64?id=${id}`);
+                        const imageData = await response.json();
+                        const imageBase64 = imageData.imagen_base64;
+
+                        // Mostrar la imagen en el modal
+                        const modal = document.getElementById('imageModal');
+                        const modalImage = document.getElementById('modalImage');
+                        modalImage.src = `data:image/png;base64,${imageBase64}`;
+                        modal.style.display = 'block';
+                    } catch (error) {
+                        console.error("Error al obtener la imagen:", error);
+                    }
+                });
+                editButtonCell.appendChild(editButton);
+                row.appendChild(editButtonCell);
+
+                // Agregar la fila a la tabla
+                databaseTableBody.appendChild(row);
+            });
+        } catch (error) {
+            console.error("Error en la solicitud fetch:", error);
+        }
+    });
+      </script>
+</body>
+</html>

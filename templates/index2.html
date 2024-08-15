@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+    <title>Monitoreo en vivo</title>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8  offset-lg-2">
+            <h3 class="mt-5">Monitoreo en vivo</h3>
+            <img src="{{ url_for('video_feed') }}" width="100%">
+        </div>
+    </div>
+</div> 
+       <button id="printInfoBtn">Imprimir Info de la Base de Datos</button>
+<div id="databaseInfo">
+    <table id="databaseTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>cdr_cal</th>
+                <th>cup_diameter</th>
+                <th>disk_diameter</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Aquí se mostrarán las filas de la tabla -->
+        </tbody>
+    </table>
+</div>
+</div>
+
+<div id="imageContainer"></div>
+<div id="imageModal" class="modal">
+<div class="modal-content">
+  <span class="close">&times;</span>
+  <img id="modalImage" src="" alt="Imagen">
+</div>
+</div>
+<script>
+// Agregar el evento de clic al botón "Imprimir Info de la Base de Datos"
+document.getElementById('printInfoBtn').addEventListener('click', async function() {
+try {
+    const response = await fetch('http://127.0.0.1:5000/get_info', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+
+    const result = await response.json();
+
+    // Actualizar la tabla con los datos obtenidos
+    const databaseTableBody = document.getElementById('databaseTable').getElementsByTagName('tbody')[0];
+    databaseTableBody.innerHTML = ''; // Limpiar contenido existente
+
+    result.forEach(rowData => {
+        const row = document.createElement('tr');
+        rowData.forEach((cellData, index) => {
+            const cell = document.createElement('td');
+            cell.textContent = cellData;
+            row.appendChild(cell);
+        });
+
+        // Crear y agregar un botón para eliminar el registro de la fila
+        const deleteButtonCell = document.createElement('td');
+        const deleteButton = document.createElement('button');
+        
+        deleteButton.addEventListener('click', async () => {
+            try {
+                // Confirmar si el usuario está seguro de eliminar el registro
+                const confirmDelete = confirm("¿Estás seguro de que deseas eliminar este registro?");
+                if (confirmDelete) {
+                    const id = rowData[0]; // Suponiendo que el ID está en la primera columna
+                    const response = await fetch('http://127.0.0.1:5000/delete_record', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ id: id })
+                    });
+
+                    const deleteResult = await response.json();
+                    if (deleteResult.success) {
+                        alert("Registro eliminado exitosamente.");
+                        // Refrescar la tabla después de eliminar el registro
+                        document.getElementById('printInfoBtn').click(); // Simular clic en el botón "Imprimir Info de la Base de Datos"
+                    } else {
+                        alert("Error al eliminar el registro.");
+                    }
+                }
+            } catch (error) {
+                console.error("Error al eliminar el registro:", error);
+            }
+        });
+        databaseTableBody.appendChild(row);
+    });
+} catch (error) {
+    console.error("Error en la solicitud fetch:", error);
+}
+});
+</script>
+</body>
+</html>
