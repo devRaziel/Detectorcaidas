@@ -22,7 +22,7 @@ model = YOLO(r"yolov8n-pose.pt")
 tracker = Sort()
 
 # Telegram Bot setup
-TOKEN = '5955691907:AAHr3oFVhPDRM8LZgkln2x2L0r5uXdiUY0c'
+TOKEN = ''
 bot = telebot.TeleBot(TOKEN)
 
 # Global variables for alert timing
